@@ -59,9 +59,4 @@ public class DiscodeitApplication {
     clearDataFiles();
     SpringApplication app = new SpringApplication(DiscodeitApplication.class);
   }
-  @PostConstruct
-  public void printPort() {
-    String port = System.getenv("PORT");
-    System.out.println(">> Environment variable PORT = " + port);
-  }
 }
