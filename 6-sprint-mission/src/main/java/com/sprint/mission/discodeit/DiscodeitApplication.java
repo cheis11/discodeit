@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit;
 
 import com.sprint.mission.discodeit.config.DiscodeitProperties;
+import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
@@ -57,5 +58,10 @@ public class DiscodeitApplication {
   public static void main(String[] args) {
     clearDataFiles();
     SpringApplication app = new SpringApplication(DiscodeitApplication.class);
+  }
+  @PostConstruct
+  public void printPort() {
+    String port = System.getenv("PORT");
+    System.out.println(">> Environment variable PORT = " + port);
   }
 }
