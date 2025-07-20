@@ -57,15 +57,15 @@ public class DiscodeitApplication {
   public static void main(String[] args) {
 //    clearDataFiles();
     SpringApplication app = new SpringApplication(DiscodeitApplication.class);
-//
-//    // Railway 환경변수 PORT를 직접 읽어서 반영
-//    String port = System.getenv("PORT");
-//    if (port != null) {
-//      Map<String, Object> props = new HashMap<>();
-//      props.put("server.port", port);
-//      app.setDefaultProperties(props);
-//    }
-//
-//    app.run(args);
+
+    // Railway 환경변수 PORT를 직접 읽어서 반영
+    String port = System.getenv("PORT");
+    if (port != null) {
+      Map<String, Object> props = new HashMap<>();
+      props.put("server.port", port);
+      app.setDefaultProperties(props);
+    }
+
+    app.run(args);
   }
 }
