@@ -6,5 +6,3 @@ spring:
   web:
     resources:
       static-locations: classpath:/static/
-server:
-  port: ${PORT:8080}
