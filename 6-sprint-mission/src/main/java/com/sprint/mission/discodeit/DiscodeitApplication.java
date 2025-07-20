@@ -22,9 +22,9 @@ public class DiscodeitApplication {
             deleteDirectoryContents(file);
           }
           if (file.delete()) {
-            System.out.println("삭제됨: " + file.getAbsolutePath());
+            System.out.println("deleted: " + file.getAbsolutePath());
           } else {
-            System.err.println("삭제 실패: " + file.getAbsolutePath());
+            System.err.println("delete failed: " + file.getAbsolutePath());
           }
         }
       }
@@ -35,27 +35,27 @@ public class DiscodeitApplication {
     File dataDir = new File(".discodeit"); // 최상위 "data" 디렉토리를 대상으로 합니다.
 
     if (dataDir.exists() && dataDir.isDirectory()) {
-      System.out.println("기존 '" + dataDir.getPath() + "' 디렉터리 내용을 삭제합니다...");
+      System.out.println(dataDir.getPath() + "' delete contents...");
       deleteDirectoryContents(dataDir); // 모든 내용을 재귀적으로 삭제
 
       if (dataDir.delete()) { // 이제 비어있는 "data" 디렉토리 자체를 삭제
-        System.out.println("'" + dataDir.getPath() + "' 디렉터리 삭제됨");
+        System.out.println("'" + dataDir.getPath() + "' directory deleted");
       } else {
-        System.err.println("'" + dataDir.getPath() + "' 디렉터리 삭제 실패");
+        System.err.println("'" + dataDir.getPath() + "' directory not deleted");
       }
     }
 
     if (!dataDir.exists()) {
       if (dataDir.mkdir()) {
-        System.out.println("'" + dataDir.getPath() + "' 디렉터리 생성됨");
+        System.out.println("'" + dataDir.getPath() + "' directory created");
       } else {
-        System.err.println("'" + dataDir.getPath() + "' 디렉터리 생성 실패");
+        System.err.println("'" + dataDir.getPath() + "' directory not created");
       }
     }
   }
 
   public static void main(String[] args) {
-    clearDataFiles();
+//    clearDataFiles();
     SpringApplication app = new SpringApplication(DiscodeitApplication.class);
 
     // Railway 환경변수 PORT를 직접 읽어서 반영
