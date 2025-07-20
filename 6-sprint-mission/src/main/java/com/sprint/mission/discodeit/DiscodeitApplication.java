@@ -53,8 +53,8 @@ public class DiscodeitApplication {
   }
 
   public static void main(String[] args) {
-    System.out.println("RAILWAY ENV PORT = " + System.getenv("PORT"));
     clearDataFiles();
     SpringApplication.run(DiscodeitApplication.class, args);
+    System.out.println("RAILWAY ENV PORT = " + System.getenv("PORT"));
   }
 }
