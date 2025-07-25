@@ -1,20 +1,25 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateServiceRequest;
-import com.sprint.mission.discodeit.dto.binarycontent.BinaryContent;
+import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.user.UserCreateServiceRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateServiceRequest;
-import com.sprint.mission.discodeit.entity.BinaryContentEntity;
-import com.sprint.mission.discodeit.entity.UserEntity;
-import com.sprint.mission.discodeit.entity.UserStatusEntity;
+import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.UserStatusService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
+import jakarta.transaction.Transactional;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -22,130 +27,148 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+@Transactional
 @RequiredArgsConstructor
 @Service
 public class BasicUserService implements UserService {
 
-  private final UserRepository userRepository;
-  private final BinaryContentRepository binaryContentRepository;
-  private final UserStatusRepository userStatusRepository;
-  private final UserMapper userMapper;
-  private final BinaryContentService basicBinaryContentService;
-  private final UserStatusService userStatusService;
+    private final UserRepository userRepository;
+    private final UserStatusRepository userStatusRepository;
+    private final UserMapper userMapper;
+    private final BinaryContentService basicBinaryContentService;
+    private final BinaryContentMapper binaryContentMapper;
+    private final BinaryContentStorage binaryContentStorage;
 
-  @Override
-  public UserDto createUser(UserCreateServiceRequest request) {
-    UserEntity newUserEntity = userMapper.toUser(request);
-    validateDuplicateUser(newUserEntity);
+    @Override
+    public UserDto createUser(UserCreateServiceRequest request) {
+        BinaryContent binaryContent = null;
+        MultipartFile profileFile = request.profile();
+        if (profileFile != null && !profileFile.isEmpty()) {
+            BinaryContentDto profile =
+                    basicBinaryContentService.createBinaryContent(
+                            new BinaryContentCreateServiceRequest(null, null, profileFile));
+            byte[] decodedBytes = null;
+            if (profile.bytes() != null && !profile.bytes().isEmpty()) {
+                decodedBytes = Base64.getDecoder().decode(profile.bytes());
+            }
+            binaryContentStorage.put(profile.id(), decodedBytes);
+            binaryContent =
+                    binaryContentMapper.binaryContentDtoToBinaryContent(profile);
+        }
 
-    UserEntity savedUserEntity = userRepository.save(newUserEntity);
+        User newUser = userMapper.userCreateServiceRequestToUser(request);
+        validateDuplicateUser(newUser);
+        newUser.setProfile(binaryContent);
 
-    MultipartFile profileFile = request.profile();
-    if (profileFile != null && !profileFile.isEmpty()) {
-      BinaryContent createdBinaryContent = basicBinaryContentService.createBinaryContent(
-          new BinaryContentCreateServiceRequest(savedUserEntity.getId(), null, profileFile));
-      savedUserEntity.setProfileId(createdBinaryContent.id());
-      userRepository.save(savedUserEntity);
+        UserStatus userStatus = new UserStatus(newUser);
+        newUser.setStatus(userStatus);
+
+        userRepository.save(newUser);
+
+        return userMapper.userToUserDto(newUser, toBinaryContentDto(binaryContent));
     }
 
-    userStatusService.createUserStatus(savedUserEntity.getId());
-    return userMapper.toUserDto(savedUserEntity);
-  }
+    @Override
+    public UserDto updateUser(UUID userId, UserUpdateServiceRequest request) {
+        User user = isExistUser(userId);
 
-  @Override
-  public UserDto updateUser(UUID userId,
-      UserUpdateServiceRequest request) {
-    UserEntity userEntity = isExistUser(userId);
+        MultipartFile profileFile = request.profile();
+        if (profileFile != null && !profileFile.isEmpty()) {
+            if (user.getProfile() != null) {
+                basicBinaryContentService.deleteBinaryContent(user.getProfile().getId());
+            }
 
-    MultipartFile profileFile = request.profile();
-    if (profileFile != null && !profileFile.isEmpty()) {
-      if (userEntity.getProfileId() != null) {
-        basicBinaryContentService.deleteBinaryContent(userEntity.getProfileId());
-      }
+            BinaryContentDto updatedBinaryContentDto =
+                    basicBinaryContentService.createBinaryContent(
+                            new BinaryContentCreateServiceRequest(user.getId(), null, profileFile));
+            byte[] decodedBytes = null;
+            if (updatedBinaryContentDto.bytes() != null && !updatedBinaryContentDto.bytes().isEmpty()) {
+                decodedBytes = Base64.getDecoder().decode(updatedBinaryContentDto.bytes());
+            }
+            binaryContentStorage.put(updatedBinaryContentDto.id(), decodedBytes);
+            BinaryContent binaryContent =
+                    binaryContentMapper.binaryContentDtoToBinaryContent(
+                            updatedBinaryContentDto);
 
-      BinaryContent updatedBinaryContent =
-          basicBinaryContentService.createBinaryContent(
-              new BinaryContentCreateServiceRequest(userEntity.getId(), null, profileFile));
-      userEntity.setProfileId(updatedBinaryContent.id());
+            user.setProfile(binaryContent);
+        }
 
+        if (request.newUsername() != null) {
+            user.setUsername(request.newUsername());
+        }
+        if (request.newEmail() != null) {
+            user.setEmail(request.newEmail());
+        }
+        if (request.newPassword() != null) {
+            user.setPassword(request.newPassword());
+        }
+
+        if (request.newUsername() != null && !request.newUsername().equals(user.getUsername())) {
+            validateDuplicateUsername(user);
+        }
+
+        if (request.newEmail() != null && !request.newEmail().equals(user.getEmail())) {
+            validateDuplicateEmail(user);
+        }
+
+        return userMapper.userToUserDto(user, toBinaryContentDto(user.getProfile()));
     }
 
-    userMapper.updateFromUserUpdateServiceRequest(userEntity, request);
-
-    if (request.newUsername() != null && !request
-        .newUsername().equals(userEntity.getUsername())) {
-      validateDuplicateUsername(userEntity);
-    }
-    if (request.newEmail() != null && !request.newEmail()
-        .equals(userEntity.getEmail())) {
-      validateDuplicateEmail(userEntity);
+    @Override
+    public void deleteUser(UUID userId) {
+        User user = isExistUser(userId);
+        if (user.getProfile() != null) {
+            basicBinaryContentService.deleteBinaryContent(user.getProfile().getId());
+        }
+        userRepository.delete(user);
     }
 
-    UserEntity updatedUserEntity = userRepository.save(userEntity);
-    return userMapper.toUserDto(updatedUserEntity);
-  }
-
-  @Override
-  public void deleteUser(UUID userId) {
-    UserEntity userEntity = isExistUser(userId);
-    if (userEntity.getProfileId() != null) {
-      basicBinaryContentService.deleteBinaryContent(userEntity.getProfileId());
+    @Override
+    public List<UserDto> findAllUser() {
+        return userRepository.findAll().stream()
+            .map(user -> userMapper.userToUserDto(user, toBinaryContentDto(user.getProfile())))
+            .collect(Collectors.toList());
     }
-    userRepository.delete(userEntity.getId());
-  }
 
-  @Override
-  public List<UserDto> findAllUser() {
-    return userRepository.findAll().stream()
-        .map(userMapper::toUserDto)
-        .collect(Collectors.toList());
-  }
-
-  private UserEntity isExistUser(UUID userId) {
-    return userRepository
-        .findById(userId)
-        .orElseThrow(() -> new IllegalArgumentException("유저가 존재하지 않습니다."));
-  }
-
-  private void validateDuplicateUser(UserEntity userEntity) {
-    validateDuplicateUsername(userEntity);
-    validateDuplicateEmail(userEntity);
-  }
-
-  private void validateDuplicateUsername(UserEntity userEntity) {
-    boolean valid =
-        userRepository.findAll().stream()
-            .anyMatch(
-                u -> !u.getId().equals(userEntity.getId()) && u.getUsername()
-                    .equals(userEntity.getUsername()));
-    if (valid) {
-      throw new IllegalArgumentException("이미 존재하는 사용자 이름입니다.");
+    private User isExistUser(UUID userId) {
+        return userRepository
+                .findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유저가 존재하지 않습니다."));
     }
-  }
 
-  private void validateDuplicateEmail(UserEntity userEntity) {
-    boolean valid =
-        userRepository.findAll().stream()
-            .anyMatch(u -> !u.getId().equals(userEntity.getId()) && u.getEmail()
-                .equals(userEntity.getEmail()));
-    if (valid) {
-      throw new IllegalArgumentException("이미 존재하는 사용자 이메일입니다.");
+    private void validateDuplicateUser(User user) {
+        validateDuplicateUsername(user);
+        validateDuplicateEmail(user);
     }
-  }
 
-  private boolean getUserStatus(UUID userId) {
-    return userStatusRepository.findAll().stream()
-        .filter(us -> us.getUserId().equals(userId))
-        .findFirst()
-        .map(UserStatusEntity::isOnline)
-        .orElse(false);
-  }
+    private void validateDuplicateUsername(User user) {
+        boolean valid =
+                userRepository.findAll().stream()
+                        .anyMatch(
+                                u -> !u.getId().equals(user.getId()) && u.getUsername().equals(user.getUsername()));
+        if (valid) {
+            throw new IllegalArgumentException("이미 존재하는 사용자 이름입니다.");
+        }
+    }
 
-  private byte[] getUserImage(UUID userId) {
-    return binaryContentRepository.findAll().stream()
-        .filter(binaryContent -> userId.equals(binaryContent.getUserId()))
-        .findFirst()
-        .map(BinaryContentEntity::getData)
-        .orElse(null);
-  }
+    private void validateDuplicateEmail(User user) {
+        boolean valid =
+                userRepository.findAll().stream()
+                        .anyMatch(u -> !u.getId().equals(user.getId()) && u.getEmail().equals(user.getEmail()));
+        if (valid) {
+            throw new IllegalArgumentException("이미 존재하는 사용자 이메일입니다.");
+        }
+    }
+
+    private BinaryContentDto toBinaryContentDto(BinaryContent binaryContent) {
+        if (binaryContent == null) return null;
+
+        try (InputStream inputStream = binaryContentStorage.get(binaryContent.getId())) {
+            byte[] bytes = inputStream.readAllBytes();
+            String base64 = Base64.getEncoder().encodeToString(bytes);
+            return binaryContentMapper.binaryContentToBinaryContentDto(binaryContent, base64);
+        } catch (IOException e) {
+            throw new RuntimeException("프로필 이미지 로딩 실패", e);
+        }
+    }
 }

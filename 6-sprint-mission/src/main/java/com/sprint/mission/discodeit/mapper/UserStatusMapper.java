@@ -1,22 +1,13 @@
 package com.sprint.mission.discodeit.mapper;
 
-import com.sprint.mission.discodeit.dto.userstatus.UserStatusResponseDto;
-import com.sprint.mission.discodeit.entity.UserStatusEntity;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import com.sprint.mission.discodeit.dto.userstatus.UserStatusDto;
+import com.sprint.mission.discodeit.entity.UserStatus;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@RequiredArgsConstructor
-@Component
-public class UserStatusMapper {
+@Mapper(componentModel = "spring")
+public interface UserStatusMapper {
 
-  public UserStatusResponseDto UserStatusToUserStatusResponseDto(
-      UserStatusEntity userStatusEntity) {
-    return new UserStatusResponseDto(
-        userStatusEntity.getId(),
-        userStatusEntity.getUserId(),
-        userStatusEntity.getCreatedAt(),
-        userStatusEntity.getUpdatedAt(),
-        userStatusEntity.getLastActiveAt(),
-        userStatusEntity.isOnline());
-  }
+    @Mapping(target = "userId", source = "user.id")
+    UserStatusDto UserStatusToUserStatusDto(UserStatus userStatus);
 }

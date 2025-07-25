@@ -1,34 +1,23 @@
 package com.sprint.mission.discodeit.mapper;
 
-import com.sprint.mission.discodeit.dto.channel.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.channel.ChannelDto;
-import com.sprint.mission.discodeit.entity.ChannelEntity;
+import com.sprint.mission.discodeit.dto.channel.PublicChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.user.UserDto;
+import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
+import com.sprint.mission.discodeit.entity.User;
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@RequiredArgsConstructor
-@Component
-public class ChannelMapper {
+@Mapper(componentModel = "spring", imports = ChannelType.class, uses = UserMapper.class)
+public interface ChannelMapper {
 
+    @Mapping(target = "type", expression = "java(ChannelType.PUBLIC)")
+    Channel publicChannelCreateDtoToChannel(PublicChannelCreateRequest req);
 
-  public ChannelEntity publicChannelCreateDtoToChannel(PublicChannelCreateRequest req) {
-    return new ChannelEntity(req.name(), req.description(), ChannelType.PUBLIC);
-  }
-
-  public ChannelDto channelToChannelResponseDto(ChannelEntity entity, Instant lastMessageTime,
-      List<UUID> userIds) {
-    return new ChannelDto(
-        entity.getId(),
-        entity.getType(),
-        entity.getChannelName(),
-        entity.getDescription(),
-        userIds,
-        lastMessageTime
-    );
-  }
-
+    @Mapping(target = "participants", source = "userDtoList")
+    @Mapping(target = "lastMessageAt", source = "lastMessageTime")
+    ChannelDto channelToChannelDto(Channel entity, Instant lastMessageTime, List<UserDto> userDtoList);
 }

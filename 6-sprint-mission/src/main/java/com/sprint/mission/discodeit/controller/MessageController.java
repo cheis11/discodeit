@@ -15,41 +15,41 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/messages")
 public class MessageController {
 
-  private final MessageService messageService;
-  private final MessageMapper messageMapper;
+    private final MessageService messageService;
+    private final MessageMapper messageMapper;
 
-  @PostMapping(consumes = "multipart/form-data")
-  public ResponseEntity<Message> createMessage(
-      @RequestPart("messageCreateRequest") MessageCreateRequest dto,
-      @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments) {
-    MessageCreateServiceRequest createRequest =
-        messageMapper.toMessageCreateServiceRequest(dto, attachments);
-    Message created = messageService.createMessage(createRequest);
-    return ResponseEntity.status(201).body(created);
-  }
+    @PostMapping(consumes = "multipart/form-data")
+    public ResponseEntity<MessageDto> createMessage(
+            @RequestPart("messageCreateRequest") MessageCreateRequest dto,
+            @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments) {
+        MessageCreateServiceRequest createRequest =
+                new MessageCreateServiceRequest(
+                        dto.content(), dto.channelId(), dto.authorId(), attachments);
+        MessageDto created = messageService.createMessage(createRequest);
+        return ResponseEntity.status(201).body(created);
+    }
 
-  @PatchMapping(value = "/{id}", consumes = "application/json")
-  public ResponseEntity<Message> updateMessage(
-      @PathVariable UUID id,
-      @RequestBody MessageUpdateRequest request,
-      @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments) {
-    MessageUpdateServiceRequest messageUpdateServiceRequest =
-        messageMapper.toMessageUpdateServiceRequest(request, attachments);
+    @PatchMapping(value = "/{id}", consumes = "application/json")
+    public ResponseEntity<MessageDto> updateMessage(
+            @PathVariable UUID id,
+            @RequestBody MessageUpdateRequest request,
+            @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments) {
+        MessageUpdateServiceRequest messageUpdateServiceRequest =
+                new MessageUpdateServiceRequest(request.newContent(), attachments);
 
-    Message updated = messageService.updateMessage(id, messageUpdateServiceRequest);
-    return ResponseEntity.ok(updated);
-  }
+        MessageDto updated = messageService.updateMessage(id, messageUpdateServiceRequest);
+        return ResponseEntity.ok(updated);
+    }
 
-  @DeleteMapping("/{messageId}")
-  public ResponseEntity<Void> deleteMessage(@PathVariable UUID messageId) {
-    messageService.deleteMessage(messageId);
-    return ResponseEntity.noContent().build();
-  }
+    @DeleteMapping("/{messageId}")
+    public ResponseEntity<Void> deleteMessage(@PathVariable UUID messageId) {
+        messageService.deleteMessage(messageId);
+        return ResponseEntity.noContent().build();
+    }
 
-  @GetMapping
-  public ResponseEntity<List<Message>> getMessagesByChannel(@RequestParam UUID channelId) {
-    List<Message> messages = messageService.findAllByChannelId(channelId);
-    return ResponseEntity.ok(messages);
-  }
+    @GetMapping
+    public ResponseEntity<List<MessageDto>> getMessagesByChannel(@RequestParam UUID channelId) {
+        List<MessageDto> messageDtos = messageService.findAllByChannelId(channelId);
+        return ResponseEntity.ok(messageDtos);
+    }
 }
-

@@ -1,54 +1,23 @@
 package com.sprint.mission.discodeit.mapper;
 
+import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.user.*;
-import com.sprint.mission.discodeit.entity.UserEntity;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import com.sprint.mission.discodeit.entity.User;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
-@RequiredArgsConstructor
-@Component
-public class UserMapper {
+@Mapper(componentModel = "spring", uses = BinaryContentMapper.class)
+public interface UserMapper {
 
-  public UserEntity toUser(UserCreateServiceRequest serviceRequest) {
-    if (serviceRequest == null) {
-      throw new IllegalArgumentException(
-          "UserCreateServiceRequest는 null일 수 없습니다.");
-    }
-    return new UserEntity(
-        serviceRequest.username(),
-        serviceRequest.email(),
-        serviceRequest.password()
-    );
-  }
+    @Mapping(target = "status", ignore = true)
+    User userCreateServiceRequestToUser(UserCreateServiceRequest serviceRequest);
 
-  public void updateFromUserUpdateServiceRequest(UserEntity userEntity,
-      UserUpdateServiceRequest serviceRequest) {
-    if (userEntity == null || serviceRequest == null) {
-      throw new IllegalArgumentException("엔티티 또는 UserUpdateServiceRequest는 null일 수 없습니다.");
-    }
-    if (serviceRequest.newUsername() != null) {
-      userEntity.setUsername(serviceRequest.newUsername());
-    }
-    if (serviceRequest.newEmail() != null) {
-      userEntity.setEmail(serviceRequest.newEmail());
-    }
-    if (serviceRequest.newPassword() != null) {
-      userEntity.setPassword(serviceRequest.newPassword());
-    }
-  }
-
-  public UserDto toUserDto(UserEntity userEntity) {
-    if (userEntity == null) {
-      return null;
-    }
-    return new UserDto(
-        userEntity.getId(),
-        userEntity.getCreatedAt(),
-        userEntity.getUpdatedAt(),
-        userEntity.getUsername(),
-        userEntity.getEmail(),
-        userEntity.getProfileId(),
-        userEntity.isOnline()
-    );
-  }
+    @Named("userToUserDto")
+    @Mapping(target = "id", source = "user.id")
+    @Mapping(target = "username", source = "user.username")
+    @Mapping(target = "email", source = "user.email")
+    @Mapping(target = "profile", source = "binaryContentDto")
+    @Mapping(target = "online", expression = "java(user.getStatus() != null && user.getStatus().isOnline())")
+    UserDto userToUserDto(User user, BinaryContentDto binaryContentDto);
 }

@@ -8,11 +8,11 @@ import java.util.UUID;
 
 public interface UserService {
 
-  public UserDto createUser(UserCreateServiceRequest userDto); // 유저 가입
+    public UserDto createUser(UserCreateServiceRequest userDto); // 유저 가입
 
-  public List<UserDto> findAllUser(); // 모든 유저 출력
+    public List<UserDto> findAllUser(); // 모든 유저 출력
 
-  public UserDto updateUser(UUID userId, UserUpdateServiceRequest request); // 유저 이름 수정
+    public UserDto updateUser(UUID userId, UserUpdateServiceRequest request); // 유저 이름 수정
 
-  public void deleteUser(UUID userId); // 유저 탈퇴
+    public void deleteUser(UUID userId); // 유저 탈퇴
 }

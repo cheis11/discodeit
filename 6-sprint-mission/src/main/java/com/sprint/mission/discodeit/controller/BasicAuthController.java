@@ -17,21 +17,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class BasicAuthController {
 
-  private final AuthService authService;
+    private final AuthService authService;
 
-  @PostMapping("/login")
-  public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-    try {
-      UserDto userDto = authService.login(loginRequest);
-      return ResponseEntity.ok(userDto);
-    } catch (UserNotFoundException e) {
-      return ResponseEntity.status(404).body(new ErrorResponse(e.getMessage()));
-    } catch (WrongPasswordException e) {
-      return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+        try {
+            UserDto userDto = authService.login(loginRequest);
+            return ResponseEntity.ok(userDto);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(404).body(new ErrorResponse(e.getMessage()));
+        } catch (WrongPasswordException e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
     }
-  }
 
-  public static record ErrorResponse(String message) {
-
-  }
+    public static record ErrorResponse(String message) {}
 }

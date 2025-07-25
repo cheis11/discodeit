@@ -42,7 +42,7 @@
 #      operationId: "create"
 #      requestBody:
 #        content:
-#          multipart/form-data:
+#          multipart/form-bytes:
 #            schema:
 #              type: "object"
 #              properties:
@@ -147,7 +147,7 @@
 #      operationId: "create_2"
 #      requestBody:
 #        content:
-#          multipart/form-data:
+#          multipart/form-bytes:
 #            schema:
 #              type: "object"
 #              properties:
@@ -277,7 +277,7 @@
 #            format: "uuid"
 #      requestBody:
 #        content:
-#          multipart/form-data:
+#          multipart/form-bytes:
 #            schema:
 #              type: "object"
 #              properties:
@@ -509,7 +509,7 @@
 #      tags:
 #        - "BinaryContent"
 #      summary: "여러 첨부 파일 조회"
-#      operationId: "findAllByIdIn"
+#      operationId: "findAllById"
 #      parameters:
 #        - name: "binaryContentIds"
 #          in: "query"
@@ -585,7 +585,7 @@
 #          type: "string"
 #        password:
 #          type: "string"
-#        profileId:
+#        profile:
 #          type: "string"
 #          format: "uuid"
 #    ReadStatusCreateRequest:
@@ -654,7 +654,7 @@
 #        authorId:
 #          type: "string"
 #          format: "uuid"
-#        attachmentIds:
+#        attachments:
 #          type: "array"
 #          items:
 #            type: "string"
@@ -692,7 +692,7 @@
 #      type: "object"
 #      description: "Private Channel 생성 정보"
 #      properties:
-#        participantIds:
+#        participants:
 #          type: "array"
 #          items:
 #            type: "string"
@@ -779,7 +779,7 @@
 #          type: "string"
 #        email:
 #          type: "string"
-#        profileId:
+#        profile:
 #          type: "string"
 #          format: "uuid"
 #        online:
@@ -799,7 +799,7 @@
 #          type: "string"
 #        description:
 #          type: "string"
-#        participantIds:
+#        participants:
 #          type: "array"
 #          items:
 #            type: "string"
